@@ -3,6 +3,9 @@ package modifier
 import (
 	"fmt"
 	"strings"
+
+	"github.com/leBolideur/simple-etl/input"
+	"github.com/leBolideur/simple-etl/utils"
 )
 
 type stringsModifierFunc (func(string) string)
@@ -18,64 +21,35 @@ type Modifier struct {
 	fn          stringsModifierFunc
 }
 
-func ApplyModifier(rows [][]string, modifier string) ([]string, error) {
+func ApplyModifier(table *input.Table, modifier string) error {
 	modifiers, err := parseModifiers(modifier)
 	if err != nil {
-		return nil, err
+		return err
 	}
-	header := rows[0]
 
 	for i := range modifiers {
-		colIndex, err := findColumnIndex(modifiers[i].columnName, header)
+		colIndex, err := utils.FindColumnIndex(modifiers[i].columnName, table.Header)
 		if err != nil {
-			return nil, err
+			return err
 		}
 
 		modifiers[i].columnIndex = colIndex
 	}
 
-	modifierMap := make(map[int]stringsModifierFunc)
+	modifierMap := make(map[int]Modifier)
 	for _, mod := range modifiers {
-		modifierMap[mod.columnIndex] = mod.fn
+		modifierMap[mod.columnIndex] = mod
 	}
 
-	var output = make([]string, 0, len(rows))
-	output = append(output, strings.Join(header, ","))
-	for _, line := range rows[1:] {
-		var rowOutput strings.Builder
-
-		for j, row := range line {
-			if fn, ok := modifierMap[j]; ok {
-				rowOutput.WriteString(fn(row))
-			} else {
-				rowOutput.WriteString(row)
-			}
-
-			if j < len(line)-1 {
-				rowOutput.WriteString(",")
+	for _, line := range table.Rows {
+		for j, cell := range line.Cells {
+			if modifier, ok := modifierMap[j]; ok {
+				cell.RawValue = modifier.fn(cell.RawValue)
 			}
 		}
-		output = append(output, rowOutput.String())
 	}
 
-	return output, nil
-}
-
-func findColumnIndex(colName string, header []string) (int, error) {
-	colIndex := -1
-	for i, column := range header {
-		if column == colName {
-			colIndex = i
-			break
-		}
-	}
-
-	if colIndex == -1 {
-		error := fmt.Errorf("no existing column with name: %s\n", colName)
-		return colIndex, error
-	}
-
-	return colIndex, nil
+	return nil
 }
 
 func parseModifiers(modifier string) ([]Modifier, error) {

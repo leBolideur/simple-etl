@@ -1,11 +1,12 @@
 package main
 
 import (
-	"encoding/csv"
 	"flag"
 	"fmt"
 	"os"
 
+	"github.com/leBolideur/simple-etl/filter"
+	"github.com/leBolideur/simple-etl/input"
 	"github.com/leBolideur/simple-etl/modifier"
 	"github.com/leBolideur/simple-etl/output"
 )
@@ -21,47 +22,35 @@ func main() {
 	inputFlag := flag.String("in", "", "Select an input file")
 	outputFlag := flag.String("out", "cli", "Select an output")
 	modifierFlag := flag.String("modifier", "", "Choose your modifier, eg: <column_name>:uppercase")
+	filterFlag := flag.String("filter", "", "Choose your filter, eg: <column_name>:<10")
 	flag.Parse()
 
-	var rows [][]string
+	var table *input.Table
 	if *formatFlag == "csv" {
-		content, err := readCSV(*inputFlag)
+		table_, err := input.ReadCSV(*inputFlag)
+		table = table_
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "readCSV err >> %s\n", err.Error())
 			return
 		}
-
-		rows = content
 	}
 
-	var modifiedRows []string
-	if *modifierFlag != "" {
-		output, err := modifier.ApplyModifier(rows, *modifierFlag)
+	if *filterFlag != "" {
+		err := filter.ApplyFilter(table, *filterFlag)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "error on applyModifier >> %s\n", err.Error())
 		}
-
-		modifiedRows = output
 	}
 
-	err := output.WriteOutput(*outputFlag, modifiedRows)
+	if *modifierFlag != "" {
+		err := modifier.ApplyModifier(table, *modifierFlag)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "error on applyModifier >> %s\n", err.Error())
+		}
+	}
+
+	err := output.WriteOutput(*outputFlag, table)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "error on writeOuput >> %s\n", err.Error())
 	}
-}
-
-func readCSV(filepath string) ([][]string, error) {
-	file, err := os.Open(filepath)
-	if err != nil {
-		return nil, err
-	}
-	defer file.Close()
-
-	reader := csv.NewReader(file)
-	content, err := reader.ReadAll()
-	if err != nil {
-		return nil, err
-	}
-
-	return content, nil
 }
