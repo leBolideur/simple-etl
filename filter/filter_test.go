@@ -14,22 +14,21 @@ func TestParseIntFilter(t *testing.T) {
 		t.Fatalf("expected 2 filters, got=%d", len(filters))
 	}
 
-	expectedColumnName := []string{
-		"age",
-		"year",
-	}
-	expectedFilterValue := []int64{
-		50,
-		2020,
+	expected := []struct {
+		columnName  string
+		filterValue int64
+	}{
+		{"age", 50},
+		{"year", 2020},
 	}
 
 	for i, filter := range filters {
-		if filter.columnName != expectedColumnName[i] {
-			t.Fatalf("expected columnName %q, got=%q", expectedColumnName[i], filter.columnName)
+		if filter.columnName != expected[i].columnName {
+			t.Fatalf("expected columnName %q, got=%q", expected[i].columnName, filter.columnName)
 		}
 
-		if filter.filterValue != expectedFilterValue[i] {
-			t.Fatalf("expected filterValue %d, got=%d", expectedFilterValue[i], filter.filterValue)
+		if filter.filterValue != expected[i].filterValue {
+			t.Fatalf("expected filterValue %d, got=%d", expected[i].filterValue, filter.filterValue)
 		}
 	}
 }
