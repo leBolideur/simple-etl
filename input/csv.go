@@ -98,7 +98,6 @@ func ReadCSV(filepath string) (*Table, error) {
 		rowIndex++
 	}
 
-	// fmt.Println(table)
 	return table, nil
 }
 
