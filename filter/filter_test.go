@@ -40,7 +40,7 @@ func createTestTable() *input.Table {
 func TestApplyFilter(t *testing.T) {
 	table := createTestTable()
 
-	err := ApplyFilter(table, "age:=30")
+	err := ApplyFilter(table, "age:eq:30")
 	if err != nil {
 		t.Fatalf("unexpected error: %s", err.Error())
 	}
@@ -54,7 +54,7 @@ func TestApplyFilter(t *testing.T) {
 }
 
 func TestParseIntFilter(t *testing.T) {
-	input := "age:>50,year:<2020,age:=50"
+	input := "age:>:50,year:<:2020,age:=:50"
 
 	filters, err := parseIntFilter(input)
 	if err != nil {
