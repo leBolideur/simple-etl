@@ -20,6 +20,7 @@ type intFilterFunc (func(int64, int64) bool)
 var intFilterMap = map[byte]intFilterFunc{
 	'>': func(value, filterValue int64) bool { return value > filterValue },
 	'<': func(value, filterValue int64) bool { return value < filterValue },
+	'=': func(value, filterValue int64) bool { return value == filterValue },
 }
 
 type IntFilter struct {

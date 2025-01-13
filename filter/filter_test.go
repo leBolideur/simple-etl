@@ -3,15 +3,15 @@ package filter
 import "testing"
 
 func TestParseIntFilter(t *testing.T) {
-	input := "age:>50,year:<2020"
+	input := "age:>50,year:<2020,age:=50"
 
 	filters, err := parseIntFilter(input)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	if len(filters) != 2 {
-		t.Fatalf("expected 2 filters, got=%d", len(filters))
+	if len(filters) != 3 {
+		t.Fatalf("expected 3 filters, got=%d", len(filters))
 	}
 
 	expected := []struct {
@@ -20,6 +20,7 @@ func TestParseIntFilter(t *testing.T) {
 	}{
 		{"age", 50},
 		{"year", 2020},
+		{"age", 50},
 	}
 
 	for i, filter := range filters {

@@ -77,6 +77,8 @@ func ReadCSV(filepath string) (*Table, error) {
 		if err != nil {
 			if err == io.EOF {
 				break
+			} else {
+				return table, err
 			}
 		}
 
