@@ -1,6 +1,57 @@
 package filter
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/leBolideur/simple-etl/input"
+)
+
+func createTestTable() *input.Table {
+	return &input.Table{
+		Header: &input.Row{
+			Cells: []*input.Cell{
+				{RawValue: "first_name"},
+				{RawValue: "last_name"},
+				{RawValue: "age"},
+			},
+			IsFiltered: false,
+		},
+		Rows: []*input.Row{
+			{
+				Cells: []*input.Cell{
+					{RawValue: "John", InferedValue: "John"},
+					{RawValue: "Doe", InferedValue: "Doe"},
+					{RawValue: "30", InferedValue: int64(30)},
+				},
+				IsFiltered: false,
+			},
+			{
+				Cells: []*input.Cell{
+					{RawValue: "Jane", InferedValue: "Jane"},
+					{RawValue: "Smith", InferedValue: "Smith"},
+					{RawValue: "45", InferedValue: int64(45)},
+				},
+				IsFiltered: false,
+			},
+		},
+	}
+}
+
+func TestApplyFilter(t *testing.T) {
+	table := createTestTable()
+
+	err := ApplyFilter(table, "age:=30")
+	if err != nil {
+		t.Fatalf("unexpected error: %s", err.Error())
+	}
+
+	if table.Rows[0].IsFiltered != false {
+		t.Fatalf("expected row[0].IsFiltered: %t, got=%t", false, table.Rows[0].IsFiltered)
+	}
+	if table.Rows[1].IsFiltered != true {
+		t.Fatalf("expected row[1].IsFiltered: %t, got=%t", false, table.Rows[1].IsFiltered)
+	}
+}
 
 func TestParseIntFilter(t *testing.T) {
 	input := "age:>50,year:<2020,age:=50"

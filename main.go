@@ -27,7 +27,7 @@ func main() {
 
 	var table *input.Table
 	if *formatFlag == "csv" {
-		table_, err := input.ReadCSV(*inputFlag)
+		table_, err := input.CreateTableFromCSV(*inputFlag)
 		table = table_
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "readCSV err >> %s\n", err.Error())

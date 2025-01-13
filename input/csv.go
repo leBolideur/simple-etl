@@ -59,7 +59,7 @@ type Table struct {
 	IsCompleted bool
 }
 
-func ReadCSV(filepath string) (*Table, error) {
+func CreateTableFromCSV(filepath string) (*Table, error) {
 	table := &Table{
 		IsCompleted: false,
 	}
@@ -95,11 +95,11 @@ func ReadCSV(filepath string) (*Table, error) {
 		} else {
 			table.Rows = append(table.Rows, row)
 		}
-		table.IsCompleted = true
 
 		rowIndex++
 	}
 
+	table.IsCompleted = true
 	return table, nil
 }
 
