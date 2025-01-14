@@ -14,15 +14,15 @@ import (
 func main() {
 	args := os.Args
 	if len(args) <= 2 {
-		fmt.Println("Usage: ./simple-etl -f=<csv|json> --in=<filepath> --modifier=<column_name>:<modifier>")
+		fmt.Println("Usage: ./simple-etl -f=csv --in=<filepath> --modifier=<column_name>:<modifier>")
 		return
 	}
 
-	formatFlag := flag.String("f", "csv", "Select a format: CSV or JSON")
+	formatFlag := flag.String("f", "csv", "Select a format: CSV")
 	inputFlag := flag.String("in", "", "Select an input file")
 	outputFlag := flag.String("out", "cli", "Select an output")
 	modifierFlag := flag.String("modifier", "", "Choose your modifier, eg: <column_name>:uppercase")
-	filterFlag := flag.String("filter", "", "Choose your filter, eg: <column_name>:<10")
+	filterFlag := flag.String("filter", "", "Choose your filter, eg: <column_name>:<:10")
 	flag.Parse()
 
 	var table *input.Table
@@ -30,7 +30,7 @@ func main() {
 		table_, err := input.CreateTableFromCSV(*inputFlag)
 		table = table_
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "readCSV err >> %s\n", err.Error())
+			fmt.Fprintf(os.Stderr, "error on CreateTableFromCSV >> %s\n", err.Error())
 			return
 		}
 	}
@@ -38,7 +38,7 @@ func main() {
 	if *filterFlag != "" {
 		err := filter.ApplyFilter(table, *filterFlag)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "error on applyModifier >> %s\n", err.Error())
+			fmt.Fprintf(os.Stderr, "error on applyFilter >> %s\n", err.Error())
 			return
 		}
 	}
@@ -51,7 +51,7 @@ func main() {
 		}
 	}
 
-	err := output.WriteOutput(*outputFlag, table)
+	err := output.WriteOutput(table, *outputFlag)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "error on writeOuput >> %s\n", err.Error())
 		return

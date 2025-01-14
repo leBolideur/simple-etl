@@ -15,7 +15,15 @@ type CLIOutput struct {
 }
 
 func (co CLIOutput) write() {
-	fmt.Println(co.table.Header)
+	headerCells := co.table.Header.Cells
+	for i, col := range headerCells {
+		fmt.Print(col.RawValue)
+		if i < len(headerCells)-1 {
+			fmt.Print(", ")
+		}
+	}
+	fmt.Println()
+
 	for _, row := range co.table.Rows {
 		if row.IsFiltered {
 			continue
@@ -30,7 +38,7 @@ func (co CLIOutput) write() {
 	}
 }
 
-func WriteOutput(output string, table *input.Table) error {
+func WriteOutput(table *input.Table, output string) error {
 	switch output {
 	case "cli":
 		cliOuput := CLIOutput{table: table}
