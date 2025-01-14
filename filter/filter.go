@@ -60,15 +60,48 @@ func parseFilters(filter string) ([]IFilter, error) {
 		}
 
 		columnName, filterStr, filterValue := split[0], split[1], split[2]
-		filter, err := inferFilterType(columnName, filterStr, filterValue)
-		if err != nil {
-			return nil, err
+		if strings.HasPrefix(filterStr, "len_") {
+			lenFilter, err := parseStrLenFilter(columnName, filterStr, filterValue)
+			if err != nil {
+				return nil, err
+			}
+
+			filters = append(filters, lenFilter)
+		} else {
+			filter, err := inferFilterType(columnName, filterStr, filterValue)
+			if err != nil {
+				return nil, err
+			}
+
+			filters = append(filters, filter)
 		}
 
-		filters = append(filters, filter)
 	}
 
 	return filters, nil
+}
+
+func parseStrLenFilter(columnName, filterStr, filterValue string) (IFilter, error) {
+	lenValue, err := strconv.ParseInt(filterValue, 0, 64)
+	if err != nil {
+		return nil, fmt.Errorf("filter value for len_* must be an integer")
+	}
+
+	filterFn, err := getStrLenFilterFunc(filterStr)
+	if err != nil {
+		return nil, err
+	}
+
+	lenFilter := &LenFilter{
+		columnName:  columnName,
+		columnType:  ColumnTypeString,
+		columnIndex: -1,
+		filterStr:   filterStr,
+		filterValue: int(lenValue),
+		fn:          filterFn,
+	}
+
+	return lenFilter, nil
 }
 
 func inferFilterType(columnName, filterStr, filterValue string) (IFilter, error) {
@@ -125,6 +158,16 @@ func getIntFilterFunc(filterStr string) (intFilterFunc, error) {
 
 func getBoolFilterFunc(filterStr string) (boolFilterFunc, error) {
 	fn, ok := boolFilterMap[filterStr]
+	if !ok {
+		err := fmt.Errorf("no filter found for %q\n", filterStr)
+		return nil, err
+	}
+
+	return fn, nil
+}
+
+func getStrLenFilterFunc(filterStr string) (strLenFilterFunc, error) {
+	fn, ok := strLenFilterMap[filterStr]
 	if !ok {
 		err := fmt.Errorf("no filter found for %q\n", filterStr)
 		return nil, err
