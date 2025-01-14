@@ -1,49 +1,25 @@
 package filter
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/leBolideur/simple-etl/input"
 )
 
-func createTestTable() *input.Table {
-	return &input.Table{
-		Header: &input.Row{
-			Cells: []*input.Cell{
-				{RawValue: "first_name"},
-				{RawValue: "last_name"},
-				{RawValue: "age"},
-				{RawValue: "active"},
-			},
-			IsFiltered: false,
-		},
-		Rows: []*input.Row{
-			{
-				Cells: []*input.Cell{
-					{RawValue: "John", InferedValue: "John", Type: input.CellString},
-					{RawValue: "Doe", InferedValue: "Doe", Type: input.CellString},
-					{RawValue: "30", InferedValue: int64(30), Type: input.CellInt},
-					{RawValue: "true", InferedValue: true, Type: input.CellBoolean},
-				},
-				IsFiltered: false,
-			},
-			{
-				Cells: []*input.Cell{
-					{RawValue: "Jane", InferedValue: "Jane", Type: input.CellString},
-					{RawValue: "Smith", InferedValue: "Smith", Type: input.CellString},
-					{RawValue: "45", InferedValue: int64(45), Type: input.CellInt},
-					{RawValue: "false", InferedValue: false, Type: input.CellBoolean},
-				},
-				IsFiltered: false,
-			},
-		},
-	}
-}
-
 func TestApplyFilter(t *testing.T) {
-	table := createTestTable()
+	inputStr := `first_name,last_name,age,active
+			  John,Doe,30,true
+			  Jane,Smith,45,false`
 
-	err := ApplyFilter(table, "age:eq:30,active:eq:true")
+	reader := strings.NewReader(inputStr)
+	table, err := input.CreateTableFromCSV(reader)
+
+	if err != nil {
+		t.Fatalf("Error on create table > %s", err.Error())
+	}
+
+	err = ApplyFilter(table, "age:eq:30,active:eq:true")
 	if err != nil {
 		t.Fatalf("%s", err.Error())
 	}

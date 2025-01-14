@@ -1,6 +1,7 @@
 package input
 
 import (
+	"strings"
 	"testing"
 )
 
@@ -36,7 +37,11 @@ func createTestTable() *Table {
 }
 
 func TestCreateTableFromCSV(t *testing.T) {
-	table, err := CreateTableFromCSV("../samples/test.csv")
+	input := `first_name,last_name,age
+			  John,Doe,30
+			  Jane,Smith,45`
+	reader := strings.NewReader(input)
+	table, err := CreateTableFromCSV(reader)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}

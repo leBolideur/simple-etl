@@ -27,7 +27,7 @@ func main() {
 
 	var table *input.Table
 	if *formatFlag == "csv" {
-		table_, err := input.CreateTableFromCSV(*inputFlag)
+		table_, err := createTableFromCSVFile(*inputFlag)
 		table = table_
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "error on CreateTableFromCSV >> %s\n", err.Error())
@@ -56,4 +56,19 @@ func main() {
 		fmt.Fprintf(os.Stderr, "error on writeOuput >> %s\n", err.Error())
 		return
 	}
+}
+
+func createTableFromCSVFile(filepath string) (*input.Table, error) {
+	file, err := os.Open(filepath)
+	if err != nil {
+		return nil, fmt.Errorf("unable to read file >> %s\n", err.Error())
+	}
+	defer file.Close()
+
+	table, err := input.CreateTableFromCSV(file)
+	if err != nil {
+		return nil, fmt.Errorf("unable to read file >> %s\n", err.Error())
+	}
+
+	return table, nil
 }

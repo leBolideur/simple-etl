@@ -1,34 +1,30 @@
 package utils
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/leBolideur/simple-etl/input"
 )
 
-func createTestTable() *input.Table {
-	return &input.Table{
-		Header: &input.Row{
-			Cells: []*input.Cell{
-				{RawValue: "first_name"},
-				{RawValue: "last_name"},
-				{RawValue: "age"},
-			},
-			IsFiltered: false,
-		},
-		Rows: []*input.Row{},
-	}
-}
-
 func TestFindColumnIndex(t *testing.T) {
-	table := createTestTable()
+	inputStr := `first_name,last_name,age,active
+			  John,Doe,30,true
+			  Jane,Smith,45,false`
+
+	reader := strings.NewReader(inputStr)
+	table, err := input.CreateTableFromCSV(reader)
+	if err != nil {
+		t.Fatalf("Error on create table > %s", err.Error())
+	}
 
 	expectedIdx := map[string]int{
 		"first_name": 0,
 		"last_name":  1,
 		"age":        2,
+		"active":     3,
 	}
-	columns := []string{"first_name", "last_name", "age"}
+	columns := []string{"first_name", "last_name", "age", "active"}
 	for _, column := range columns {
 		idx, err := FindColumnIndex(column, table.Header)
 		if err != nil {

@@ -3,7 +3,6 @@ package input
 import (
 	"encoding/csv"
 	"io"
-	"os"
 	"strconv"
 )
 
@@ -60,21 +59,15 @@ type Table struct {
 	IsCompleted bool
 }
 
-func CreateTableFromCSV(filepath string) (*Table, error) {
+func CreateTableFromCSV(reader io.Reader) (*Table, error) {
 	table := &Table{
 		IsCompleted: false,
 	}
 
-	file, err := os.Open(filepath)
-	if err != nil {
-		return table, err
-	}
-	defer file.Close()
-
-	reader := csv.NewReader(file)
+	csvReader := csv.NewReader(reader)
 	rowIndex := 0
 	for {
-		line, err := reader.Read()
+		line, err := csvReader.Read()
 		if err != nil {
 			if err == io.EOF {
 				break
