@@ -9,63 +9,36 @@ import (
 	"github.com/leBolideur/simple-etl/utils"
 )
 
-type ColumnType int
-
-const (
-	ColumTypeInt ColumnType = iota
-)
-
-type intFilterFunc (func(int64, int64) bool)
-
-var intFilterMap = map[string]intFilterFunc{
-	">":  func(value, filterValue int64) bool { return value > filterValue },
-	"gt": func(value, filterValue int64) bool { return value > filterValue },
-
-	"<":  func(value, filterValue int64) bool { return value < filterValue },
-	"lt": func(value, filterValue int64) bool { return value < filterValue },
-
-	"=":  func(value, filterValue int64) bool { return value == filterValue },
-	"eq": func(value, filterValue int64) bool { return value == filterValue },
-
-	"!=": func(value, filterValue int64) bool { return value != filterValue },
-	"ne": func(value, filterValue int64) bool { return value != filterValue },
-}
-
-type IntFilter struct {
-	columnName  string
-	ColumnType  ColumnType
-	columnIndex int
-	filterValue int64
-	fn          intFilterFunc
-}
-
 func ApplyFilter(table *input.Table, filter string) error {
-	filters, err := parseIntFilter(filter)
+	filters, err := parseFilters(filter)
 	if err != nil {
 		return err
 	}
 
 	for i := range filters {
-		colIndex, err := utils.FindColumnIndex(filters[i].columnName, table.Header)
+		colIndex, err := utils.FindColumnIndex(filters[i].getColumnName(), table.Header)
 		if err != nil {
 			return err
 		}
 
-		filters[i].columnIndex = colIndex
+		filters[i].setColumnIndex(colIndex)
 	}
 
-	filterMap := make(map[int][]IntFilter)
+	filterMap := make(map[int][]IFilter)
 	for _, filter := range filters {
-		filterMap[filter.columnIndex] = append(filterMap[filter.columnIndex], filter)
+		filterMap[filter.getColumnIndex()] = append(filterMap[filter.getColumnIndex()], filter)
 	}
 
-	for i := range table.Rows {
-		for j, cell := range table.Rows[i].Cells {
-			if filters, ok := filterMap[j]; ok {
+	for _, row := range table.Rows {
+		for colIdx, cell := range row.Cells {
+			if filters, ok := filterMap[colIdx]; ok {
 				for _, filter := range filters {
-					var inferedValue = cell.InferedValue.(int64)
-					if !filter.fn(inferedValue, filter.filterValue) {
-						table.Rows[i].IsFiltered = true
+					if filter.getColumnType() != ColumnType(cell.Type) {
+						err := fmt.Errorf("column %q of type %q are not compatible with %q", filter.getColumnName(), ColumnType(cell.Type), filter.getColumnType())
+						return err
+					}
+					if !row.IsFiltered && !filter.apply(cell.InferedValue) {
+						row.IsFiltered = true
 					}
 				}
 			}
@@ -75,9 +48,9 @@ func ApplyFilter(table *input.Table, filter string) error {
 	return nil
 }
 
-func parseIntFilter(filter string) ([]IntFilter, error) {
+func parseFilters(filter string) ([]IFilter, error) {
 	filtersSplit := strings.Split(filter, ",")
-	filters := make([]IntFilter, 0, len(filtersSplit))
+	filters := make([]IFilter, 0, len(filtersSplit))
 
 	for _, filter := range filtersSplit {
 		split := strings.Split(filter, ":")
@@ -87,36 +60,73 @@ func parseIntFilter(filter string) ([]IntFilter, error) {
 		}
 
 		columnName, filterStr, filterValue := split[0], split[1], split[2]
-
-		filterFn, err := getFilterFunc(filterStr)
+		filter, err := inferFilterType(columnName, filterStr, filterValue)
 		if err != nil {
 			return nil, err
 		}
 
-		filterIntValue, err := strconv.ParseInt(filterValue, 0, 64)
-		if err != nil {
-			err := fmt.Errorf("filter value is not an integer\n")
-			return nil, err
-		}
-
-		intFilterStruct := IntFilter{
-			columnName:  columnName,
-			ColumnType:  ColumTypeInt,
-			columnIndex: -1,
-			filterValue: filterIntValue,
-			fn:          filterFn,
-		}
-
-		filters = append(filters, intFilterStruct)
+		filters = append(filters, filter)
 	}
 
 	return filters, nil
 }
 
-func getFilterFunc(filterChar string) (intFilterFunc, error) {
-	fn, ok := intFilterMap[filterChar]
+func inferFilterType(columnName, filterStr, filterValue string) (IFilter, error) {
+	filterIntValue, err := strconv.ParseInt(filterValue, 0, 64)
+	if err == nil {
+		filterFn, err := getIntFilterFunc(filterStr)
+		if err != nil {
+			return nil, err
+		}
+
+		intFilterStruct := &GenericFilter[int64]{
+			columnName:  columnName,
+			columnType:  ColumnTypeInt,
+			columnIndex: -1,
+			filterStr:   filterStr,
+			filterValue: filterIntValue,
+			fn:          filterFn,
+		}
+
+		return intFilterStruct, nil
+	}
+
+	filterBoolValue, err := strconv.ParseBool(filterValue)
+	if err == nil {
+		filterFn, err := getBoolFilterFunc(filterStr)
+		if err != nil {
+			return nil, err
+		}
+
+		boolFilterStruct := &GenericFilter[bool]{
+			columnName:  columnName,
+			columnType:  ColumnTypeBool,
+			columnIndex: -1,
+			filterStr:   filterStr,
+			filterValue: filterBoolValue,
+			fn:          filterFn,
+		}
+
+		return boolFilterStruct, nil
+	}
+
+	return nil, fmt.Errorf("unsupported filter value: %q", filterValue)
+}
+
+func getIntFilterFunc(filterStr string) (intFilterFunc, error) {
+	fn, ok := intFilterMap[filterStr]
 	if !ok {
-		err := fmt.Errorf("no filter found for %q\n", filterChar)
+		err := fmt.Errorf("no filter found for %q\n", filterStr)
+		return nil, err
+	}
+
+	return fn, nil
+}
+
+func getBoolFilterFunc(filterStr string) (boolFilterFunc, error) {
+	fn, ok := boolFilterMap[filterStr]
+	if !ok {
+		err := fmt.Errorf("no filter found for %q\n", filterStr)
 		return nil, err
 	}
 

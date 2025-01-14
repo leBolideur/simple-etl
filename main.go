@@ -39,6 +39,7 @@ func main() {
 		err := filter.ApplyFilter(table, *filterFlag)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "error on applyModifier >> %s\n", err.Error())
+			return
 		}
 	}
 
@@ -46,11 +47,13 @@ func main() {
 		err := modifier.ApplyModifier(table, *modifierFlag)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "error on applyModifier >> %s\n", err.Error())
+			return
 		}
 	}
 
 	err := output.WriteOutput(*outputFlag, table)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "error on writeOuput >> %s\n", err.Error())
+		return
 	}
 }

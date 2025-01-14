@@ -10,8 +10,9 @@ import (
 type CellType string
 
 const (
-	CellString CellType = "string"
-	CellInt             = "int"
+	CellString  CellType = "string"
+	CellInt              = "int"
+	CellBoolean          = "bool"
 )
 
 type Row struct {
@@ -107,6 +108,11 @@ func inferCellType(rawValue string) (CellType, any) {
 	intValue, err := strconv.ParseInt(rawValue, 0, 64)
 	if err == nil {
 		return CellInt, intValue
+	}
+
+	boolValue, err := strconv.ParseBool(rawValue)
+	if err == nil {
+		return CellBoolean, boolValue
 	}
 
 	return CellString, rawValue
