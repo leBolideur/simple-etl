@@ -38,4 +38,9 @@ func TestFindColumnIndex(t *testing.T) {
 			t.Fatalf("expected index: %d, got=%d", expectedIdx[column], idx)
 		}
 	}
+
+	idx, _ := FindColumnIndex("haha", table.Header)
+	if idx != -1 {
+		t.Fatalf("expected -1")
+	}
 }

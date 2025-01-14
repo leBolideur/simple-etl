@@ -73,3 +73,19 @@ func TestInferCellType_Int(t *testing.T) {
 		t.Fatalf("expected 64, got=%d", v)
 	}
 }
+
+func TestInferCellType_Bool(t *testing.T) {
+	type_, v := inferCellType("true")
+	if type_ != CellBoolean {
+		t.Fatalf("expected 'CellBoolean', got=%q", type_)
+	}
+
+	tt, ok := v.(bool)
+	if !ok {
+		t.Fatalf("expected bool, got=%T", tt)
+	}
+
+	if tt != true {
+		t.Fatalf("expected true, got=%d", v)
+	}
+}
