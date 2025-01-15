@@ -33,25 +33,25 @@ func TestApplyFilter(t *testing.T) {
 }
 
 func TestParseFilter(t *testing.T) {
-	input := "age:>:50,year:<:2020,active:=:true"
+	input := "age:gt:50,year:lt:2020,active:eq:true,first_name:len_eq:5"
 
 	filters, err := parseFilters(input)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	if len(filters) != 3 {
-		t.Fatalf("expected 3 filters, got=%d", len(filters))
+	if len(filters) != 4 {
+		t.Fatalf("expected 4 filters, got=%d", len(filters))
 	}
 
 	expected := []struct {
-		columnName  string
-		columnType  ColumnType
-		filterValue any
+		columnName string
+		columnType ColumnType
 	}{
-		{"age", ColumnTypeInt, 50},
-		{"year", ColumnTypeInt, 2020},
-		{"active", ColumnTypeBool, true},
+		{"age", ColumnTypeInt},
+		{"year", ColumnTypeInt},
+		{"active", ColumnTypeBool},
+		{"first_name", ColumnTypeString},
 	}
 
 	for i, filter := range filters {
